@@ -1,13 +1,13 @@
-[
-  {
-    "name": "performance-marketer",
-    "description": "B2B performance marketing plugin for LinkedIn Ads. Includes campaign health diagnostics, 3-level ads reporting, and audience export to LinkedIn Matched Audiences. Powered by Supabase data.",
-    "source": {
-      "source": "url",
-      "url": "https://github.com/loneirynck/claude-plugins.git",
-      "sha": "5b6dcce0bc32ee4d0a1ca7959aa84d9811c50a9f",
-      "subdirectory": "performance-marketer"
-    },
-    "homepage": "https://github.com/loneirynck/claude-plugins"
-  }
-]
+{
+  "name": "loneirynck-plugins",
+  "owner": {
+    "name": "Lorenzo Neirynck"
+  },
+  "plugins": [
+    {
+      "name": "performance-marketer",
+      "source": "./performance-marketer",
+      "description": "B2B performance marketing plugin for LinkedIn Ads. Includes campaign health diagnostics, 3-level ads reporting, and audience export to LinkedIn Matched Audiences. Powered by Supabase data."
+    }
+  ]
+}
