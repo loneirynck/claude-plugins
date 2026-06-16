@@ -1,0 +1,25 @@
+{
+  "name": "performance-marketer",
+  "version": "0.1.0",
+  "description": "LinkedIn Ads performance, audience management, and campaign intelligence for B2B marketing teams",
+  "author": {
+    "name": "Nodewin Labs",
+    "url": "https://github.com/nodewin-labs"
+  },
+  "repository": "https://github.com/nodewin-labs/nodewin",
+  "license": "UNLICENSED",
+  "keywords": ["linkedin-ads", "marketing", "audience", "b2b", "campaign"],
+  "commands": [
+    "./commands/audience-export.md",
+    "./commands/ads-report.md",
+    "./commands/campaign-health.md"
+  ],
+  "skills": [
+    "./skills/audience-export/SKILL.md",
+    "./skills/linkedin-ads-report/SKILL.md",
+    "./skills/campaign-health/SKILL.md"
+  ],
+  "agents": [
+    "./agents/performance-marketer.md"
+  ]
+}
