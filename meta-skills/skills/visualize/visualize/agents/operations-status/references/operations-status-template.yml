@@ -1,0 +1,73 @@
+# Platform Operations Status Dashboard — YAML Template
+# Blank template. Copy to client_projects/{client}/.nodewin/platform-operations-status.yaml and fill in.
+# Used by /visualize:operations-status to render a 3-column operations dashboard.
+# Data mode: live (queries Supabase MCP) or cached (renders from pre-filled values).
+
+# ── Client Identity ─────────────────────────────────────
+client: null                # e.g., "CONVEO" (uppercase)
+supabase_mcp: null          # e.g., "Supabase_Conveo_MCP" — MCP profile name for execute_sql
+source_table: null          # e.g., "fathom.raw_transcripts" — primary transcript source
+core_focus: null            # e.g., "Qualitative research GTM platform" — shown in header
+
+# ── Data Pipelines (Column 1) ───────────────────────────
+# Each pipeline represents a data processing step.
+# Status dots: complete (green) | partial (orange) | not_built (red) | in_progress (blue)
+# Badges: trigger | cron | manual | not_built
+data_pipelines:
+  - id: null                # kebab-case identifier, e.g., "meeting-ingestion"
+    name: null              # Display name, e.g., "Meeting Ingestion"
+    table: null             # Source table, e.g., "fathom.raw_transcripts"
+    status: null            # complete | partial | not_built | in_progress
+    badge: null             # trigger | cron | manual | not_built | null
+    badge_detail: null      # e.g., "INSERT trigger" | "batch classification"
+    prompt_version: null    # e.g., "buyer_persona_type" — for LLM-driven pipelines
+    assigned_to: null       # e.g., "Victor" | "Sander" | "Both" | null
+    # Queries — executed via Supabase MCP in live mode, or pre-filled in cached mode
+    count_query: null       # SQL returning {total: N}
+    count_value: null       # Pre-filled count for cached mode
+    bar_query: null         # SQL returning {filled: N, remainder: N}
+    bar_values: null        # Pre-filled {filled: N, remainder: N} for cached mode
+    bar_labels: []          # e.g., ["with transcript", "without transcript"]
+    extra_count_query: null # Optional secondary count
+    extra_count_value: null # Pre-filled for cached mode
+    extra_count_label: null # e.g., "mtgs"
+    breakdown_query: null   # SQL returning [{name, cnt}]
+    breakdown_values: []    # Pre-filled for cached mode
+    breakdown_type: null    # e.g., "category" | "dimension" | "persona"
+
+# ── Automation (Column 2) ───────────────────────────────
+# Flat list of all automated + non-automated processes.
+automation:
+  automated:
+    - name: null            # e.g., "Fathom Sync"
+      status: null          # complete | partial | not_built | in_progress
+      badge: null           # cron | trigger
+      schedule: null        # e.g., "every 6h" | "on INSERT"
+      detail: null          # e.g., "fathom-engine edge function"
+
+  not_automated:
+    - name: null            # e.g., "SPICED Extraction"
+      status: null          # not_built | partial
+      badge: manual         # always "manual" for this section
+      reason: null          # e.g., "requires prompt tuning first"
+
+# ── Skills (Column 3) ───────────────────────────────────
+# Flat list of Claude Code skills relevant to this client.
+skills:
+  - name: null              # e.g., "meeting-metadata"
+    status: null            # complete | partial | not_built | in_progress
+    badge: null             # null | not_built
+    dependencies: []        # e.g., ["fathom.raw_transcripts", "meetings.categorization"]
+
+# ── Summary Stats (Bottom Row) ──────────────────────────
+# Rendered as a row of metric boxes below the 3 columns.
+summary_stats:
+  - label: null             # e.g., "Total Meetings"
+    query: null             # SQL for live mode
+    value: null             # Pre-filled for cached mode
+    color: null             # e.g., "#4caf50" | "#ff9800"
+    format: null            # e.g., "number" | "percentage"
+
+# ── Architecture Notes (Footer) ─────────────────────────
+# Rendered as bullet points at the bottom of the dashboard.
+architecture_notes: []      # Array of free-form strings

@@ -1,0 +1,335 @@
+# postgres-first-event-driven-pipeline.yml
+# ============================================================================
+# Reference pattern for Postgres-first event-driven pipelines on Supabase.
+#
+# Use this when /visualize is asked to diagram any pipeline that follows:
+#   "Postgres is the brain, edge functions are the hands"
+#
+# Architecture:
+#   Layer 1: Edge Functions — I/O only (API calls, no business logic)
+#   Layer 2: Table Functions — all routing, callbacks, state transitions
+#   Layer 3: Tables — state machine queue + destination + observability
+#
+# Event-driven chain: callbacks fire the next step immediately via pg_net,
+# no waiting for the next cron tick between steps.
+#
+# Based on: CRM-to-PLI Entity Resolution Pipeline (migration 058)
+# ============================================================================
+
+# ============================================================================
+# SWIM LANES (horizontal, left → right)
+# ============================================================================
+layout:
+  direction: horizontal  # left → right flow
+  lanes:
+    - id: edge-functions
+      label: "EDGE FUNCTIONS"
+      sublabel: "(I/O only — API calls)"
+      color:
+        stroke: "#e94560"
+        fill: "#2a1a3a"
+        text: "#c0a0b0"
+
+    - id: table-functions
+      label: "TABLE FUNCTIONS"
+      sublabel: "(business logic in core.* schema)"
+      color:
+        stroke: "#1a5a9e"
+        fill: "#0f3460"
+        text: "#a0c0e0"
+
+    - id: tables
+      label: "TABLES"
+      sublabel: "(state + data storage)"
+      color:
+        stroke: "#4caf50"
+        fill: "#1a2a1a"
+        text: "#8cbf8c"
+
+# ============================================================================
+# COMPONENTS (reusable building blocks)
+# ============================================================================
+components:
+
+  # --- Triggers ---
+  pg_cron:
+    lane: table-functions
+    position: left  # always starts the flow
+    color:
+      stroke: "#1a5a9e"
+      fill: "#0f3460"
+    fields:
+      - schedule  # e.g., "* * * * *"
+      - function  # e.g., "dispatch_batch(10)"
+      - description  # e.g., "Seeds 10 chains/min"
+
+  # --- Edge Functions (I/O) ---
+  edge_function:
+    lane: edge-functions
+    color:
+      stroke: "#e94560"
+      fill: "#2a1a3a"
+    fields:
+      - name  # e.g., "freshdata-engine"
+      - action  # e.g., "enrich-profile"
+      - input  # e.g., "linkedin_url"
+      - output  # e.g., "URN vmid → PLI upsert"
+      - rate_limit  # e.g., "20 calls/min"
+      - callback  # e.g., "on_complete → handle_result()"
+
+  # --- Table Functions (logic) ---
+  dispatcher:
+    lane: table-functions
+    color:
+      stroke: "#1a5a9e"
+      fill: "#0f3460"
+    fields:
+      - name  # e.g., "dispatch_crm_single()"
+      - priorities  # list of routing rules
+      - reads_from  # which table
+      - dispatches_to  # which edge function(s) via pg_net
+      - updates  # which table status
+
+  callback_handler:
+    lane: table-functions
+    color:
+      stroke: "#ff9800"  # or "#e94560" depending on source
+      fill: "#1a3a1a"  # or "#2a1a3a"
+    fields:
+      - name  # e.g., "handle_crm_serper_result()"
+      - receives_from  # which edge function
+      - on_success  # what happens (update status, chain next step)
+      - on_failure  # what happens (terminal, retry, fallback)
+      - chains_to  # optional: which edge function to fire immediately
+
+  linker:
+    lane: table-functions
+    color:
+      stroke: "#4caf50"
+      fill: "#1a2a1a"
+    fields:
+      - name  # e.g., "link_crm_contacts()"
+      - matching_strategy  # priority list: URL slug, email, name+company
+      - source_table  # queue
+      - destination_table  # PLI
+
+  # --- Tables ---
+  queue_table:
+    lane: tables
+    is_state_machine: true
+    color:
+      stroke: "#1a5a9e"
+      fill: "#0a0a18"
+    fields:
+      - name  # e.g., "core.crm_enrichment_queue"
+      - statuses  # list of all status values
+      - terminal_statuses  # subset that stops processing
+      - key_fields  # list of important columns
+
+  destination_table:
+    lane: tables
+    color:
+      stroke: "#4caf50"
+      fill: "#1a2a1a"
+    fields:
+      - name  # e.g., "public.pli"
+      - key_field  # e.g., "vmid"
+      - link_field  # e.g., "hubspot_contact_id"
+
+  observability_table:
+    lane: tables
+    color:
+      stroke: "#3a3a5c"
+      fill: "#12122a"
+    fields:
+      - name  # e.g., "core.pipeline_runs"
+      - tracked_pipelines  # list of pipeline names logged
+
+# ============================================================================
+# CONNECTIONS (arrow types between components)
+# ============================================================================
+connections:
+
+  pg_net_dispatch:
+    style: solid
+    color: "#7eb8da"  # or match edge function color
+    label: "pg_net dispatch"
+    direction: table-function → edge-function
+    description: "Fire-and-forget HTTP POST to edge function"
+
+  callback:
+    style: dashed
+    color: "#4caf50"
+    label: "callback (PostgREST RPC)"
+    direction: edge-function → table-function
+    description: "Edge fn calls supabase.schema('core').rpc() after completion"
+
+  event_chain:
+    style: solid
+    color: "#9c27b0"
+    weight: 2  # thicker than normal arrows
+    label: "EVENT CHAIN (immediate)"
+    description: |
+      Callback handler fires pg_net to the next edge function
+      without waiting for the next cron tick. This is the key
+      pattern that makes the pipeline event-driven.
+
+  reads_writes:
+    style: dashed
+    color: "#7eb8da"
+    opacity: 0.5
+    label: "reads/writes"
+    direction: table-function → table
+    description: "Table functions read from and write to queue + destination tables"
+
+# ============================================================================
+# STATE MACHINE PATTERN
+# ============================================================================
+state_machine:
+  description: |
+    The queue table is the central state machine. Each row represents
+    one item flowing through the pipeline. Status transitions are driven
+    by table functions (dispatchers + callback handlers).
+
+    Key principle: the queue never loses state. Every API call result
+    (success, failure, rate limit) is captured as a status transition.
+
+  transition_types:
+    dispatch: "Function picks item from queue → fires pg_net → updates status"
+    callback_success: "Edge fn completes → callback RPC updates queue status"
+    callback_failure: "Edge fn fails → callback handles: retry / fallback / terminal"
+    event_chain: "Callback immediately fires pg_net to next edge fn (no cron wait)"
+    rate_limit_retry: "Callback resets status to pending → cron picks up on next tick"
+
+  # Example transitions from CRM-PLI pipeline:
+  example_transitions:
+    - from: pending
+      to: serper_dispatched
+      trigger: "dispatch_crm_single() — no URL, needs discovery"
+    - from: serper_dispatched
+      to: serper_found
+      trigger: "handle_crm_serper_result() — callback, URL found"
+    - from: serper_found
+      to: bd_dispatched
+      trigger: "handle_crm_serper_result() EVENT CHAIN — fires FreshData"
+    - from: pending
+      to: bd_dispatched
+      trigger: "dispatch_crm_single() — has URL, direct enrichment"
+    - from: bd_dispatched
+      to: bd_completed
+      trigger: "handle_crm_enrichment_result() — callback, success"
+    - from: bd_dispatched
+      to: pending (tier 2)
+      trigger: "handle_crm_enrichment_result() EVENT CHAIN — dead URL → fires Serper"
+    - from: bd_dispatched
+      to: pending
+      trigger: "handle_crm_enrichment_result() — rate limited → retry next tick"
+    - from: bd_completed
+      to: linked
+      trigger: "link_crm_contacts() — cron link pass"
+    - from: serper_dispatched
+      to: serper_missed
+      trigger: "handle_crm_serper_result() — not found (terminal)"
+
+# ============================================================================
+# CONTACT JOURNEY EXAMPLES (always include in pipeline diagrams)
+# ============================================================================
+journey_examples:
+  description: |
+    Show 3-4 representative paths through the pipeline.
+    Include: number of API calls, status path, and whether
+    event chains are used.
+
+  examples:
+    - name: "Happy path (valid data, 1 API call)"
+      calls: 1
+      path: "pending → dispatched → completed → linked"
+
+    - name: "Fallback chain (2-3 API calls, event-driven)"
+      calls: 3
+      path: "pending → dispatched → [fail] → CHAIN next_api → CHAIN enrichment → completed → linked"
+
+    - name: "Discovery + enrichment (2 API calls, event-driven)"
+      calls: 2
+      path: "pending → discovery_dispatched → found → CHAIN enrichment → completed → linked"
+
+    - name: "Terminal failure (1 API call)"
+      calls: 1
+      path: "pending → dispatched → missed/failed (terminal)"
+
+# ============================================================================
+# RATE LIMITS SECTION (always include in pipeline diagrams)
+# ============================================================================
+rate_limits:
+  description: |
+    Always document per-API rate limits and worst-case analysis.
+    Show that the pipeline stays within limits even when all
+    contacts hit the fallback path.
+
+  fields:
+    - api_name
+    - calls_per_minute  # hard limit from provider
+    - calls_per_month  # budget limit
+    - worst_case_per_tick  # e.g., "10 direct + 10 from chains = 20"
+
+  worst_case_formula: |
+    items_per_tick × max_calls_per_item ≤ api_rate_limit
+    Example: 10 items × 2 calls (dispatch + chain) = 20 ≤ 20/min ✓
+
+# ============================================================================
+# CRON SCHEDULE (always include)
+# ============================================================================
+cron_schedule:
+  description: |
+    List all pg_cron jobs that drive the pipeline.
+    Cron only SEEDS new chains — chains self-complete via callbacks.
+
+  jobs:
+    - name: "drip"
+      schedule: "* * * * *"
+      purpose: "Seeds N items/min into the pipeline"
+    - name: "link"
+      schedule: "*/15 * * * *"
+      purpose: "Runs the linking/matching pass"
+    - name: "enqueue"
+      schedule: "0 3 * * *"
+      purpose: "Daily refill of queue from source"
+
+# ============================================================================
+# RENDERING RULES (for /visualize)
+# ============================================================================
+rendering:
+  dark_theme: true
+  background: "#0f0f1a"
+
+  lane_labels:
+    position: left  # lane labels on the left edge
+    font_size: 9
+
+  component_boxes:
+    rx: 6  # rounded corners
+    font_size_title: 9
+    font_size_body: 7
+
+  arrow_conventions:
+    pg_net: "solid line, colored by target edge function"
+    callback: "dashed line, green (success) or purple (chain)"
+    event_chain: "solid line, purple, weight 2, labeled 'CHAIN'"
+    reads_writes: "dashed line, low opacity"
+
+  always_include:
+    - swim_lanes  # 3 horizontal lanes
+    - state_machine_status_flow  # status nodes inside queue table
+    - journey_examples  # 3-4 path examples at bottom
+    - rate_limit_section  # worst case analysis
+    - cron_schedule  # all pg_cron jobs
+    - legend  # arrow types + color coding
+
+  color_palette:
+    supabase: { stroke: "#1a5a9e", fill: "#0f3460", text: "#a0c0e0" }
+    edge_function: { stroke: "#e94560", fill: "#2a1a3a", text: "#c0a0b0" }
+    serper: { stroke: "#ff9800", fill: "#1a3a1a", text: "#c0b080" }
+    success: { stroke: "#4caf50", fill: "#1a2a1a", text: "#8cbf8c" }
+    chain: { stroke: "#9c27b0", fill: "#2a1a2a", text: "#b080c0" }
+    terminal_fail: { stroke: "#e94560", fill: "#3a1a1a", text: "#c09090" }
+    observability: { stroke: "#3a3a5c", fill: "#12122a", text: "#556" }

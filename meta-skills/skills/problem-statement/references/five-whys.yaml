@@ -1,0 +1,54 @@
+name: 5 Whys Root Cause Analysis
+description: Drill through 5 layers of "why" to move from symptom to root cause. Each "why" peels back one layer of causation.
+
+process:
+  setup:
+    instruction: Start with the surface-level problem as stated by the user or identified in the conversation scan.
+    note: The first "why" addresses the symptom. Each subsequent "why" addresses the answer to the previous one — not the original problem.
+
+  layers:
+    - level: 1
+      question: "Why is this happening?"
+      purpose: Identify the immediate/proximate cause. This is usually what people already know.
+
+    - level: 2
+      question: "Why does [answer to Why 1] happen?"
+      purpose: Move past the obvious. This layer often reveals a process or system gap.
+
+    - level: 3
+      question: "Why does [answer to Why 2] happen?"
+      purpose: Start reaching structural causes — design decisions, missing guardrails, architectural constraints.
+
+    - level: 4
+      question: "Why does [answer to Why 3] happen?"
+      purpose: Approach root cause territory. Often reveals incentive misalignment, missing feedback loops, or fundamental misunderstandings.
+
+    - level: 5
+      question: "Why does [answer to Why 4] happen?"
+      purpose: The root cause. If this level feels like "because nobody thought about it" or "because we assumed X" — you've arrived.
+
+  rules:
+    - Each "why" must build on the previous answer, not restart from the top
+    - If a "why" has multiple valid answers, pick the one most within your control to change
+    - Stop before 5 if you've clearly hit root cause (don't force it)
+    - Go past 5 if you haven't hit root cause yet (rare but valid)
+    - The root cause should be actionable — if it's "the universe is unfair" you went too far
+
+  output_format:
+    instruction: |
+      Present as a chain:
+
+      **Surface:** [the symptom]
+      **Why 1:** [immediate cause]
+      **Why 2:** [process/system gap]
+      **Why 3:** [structural cause]
+      **Why 4:** [design/incentive issue]
+      **Why 5:** [root cause]
+
+      **Root cause (one sentence):** [the actionable root cause]
+
+  anti_patterns:
+    - Jumping to solutions at any "why" level — stay in diagnosis mode
+    - Circular reasoning (Why 3 = rephrased Why 1)
+    - Blame assignment instead of system analysis ("because John didn't do X" → rephrase as "because there's no process ensuring X happens")
+    - Staying at the symptom level for all 5 whys (just rephrasing the same issue)

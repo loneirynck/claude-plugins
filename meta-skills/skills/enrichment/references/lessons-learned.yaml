@@ -1,0 +1,110 @@
+# Enrichment Skill — Lessons Learned
+# Updated after each run. Captures what broke, what was fixed, and what to improve.
+# After adding a lesson, consider running /skill-audit to check if the fix should be codified.
+
+lessons:
+  - id: 1
+    date: 2026-04-19
+    run: "first pipeline run (discover → enrich-contacts → enrich-companies → classify)"
+    what_happened: "enrich-companies inserted 0/128 records"
+    root_cause: |
+      Two bugs:
+      1. BrightData company profile response uses different field names than expected:
+         - `industries` not `industry`
+         - `about` not `description`
+         - `headquarters` (flat string) not `hq.city`/`hq.country`
+         - `followers` not `follower_count`
+         - `organization_type` not `company_type`
+         - `company_size` is text ("10,001+ employees") not a number
+         - `employees_in_linkedin` is the numeric count
+      2. `ON CONFLICT (company_name)` fails silently — no unique constraint on company_name.
+         CLI primary key is `company_id` (bigint, no auto-increment).
+    fix: |
+      - Rewrote field mapping to match actual BrightData response
+      - Changed to check-then-insert pattern (SELECT → INSERT or UPDATE)
+      - Generate company_id from numeric BD company_id or hash of company name
+      - Parse headquarters string → city/country components
+      - Parse company_size text → numeric employee_count
+    lesson: "Always test BrightData field mapping with a real MCP lookup before writing the upsert. Never assume field names from documentation alone."
+    should_audit: false
+
+  - id: 2
+    date: 2026-04-19
+    run: "first pipeline run"
+    what_happened: "enrich-contacts wrote titles for 42/61 but seniority, industry, location all null"
+    root_cause: |
+      BrightData basic person profile dataset does NOT return:
+      - title/headline (job title)
+      - seniority
+      - industry
+      - experience array (in basic lookup)
+      It DOES return: city, country_code, about, current_company_name, education, languages, followers.
+      The 53 contacts with titles had them from HubSpot seeding, not BrightData.
+    fix: |
+      - Map `city` + `country_code` → location
+      - Map `about` → summary
+      - Map `current_company_name` → companyname
+      - Attempt to extract title from `experience` array if present (fallback)
+      - Removed seniority/industry updates (not available in basic profile)
+    lesson: "BrightData person profile basic lookup is limited. For job titles, need either HubSpot data, LinkedIn full profile scrape, or the experience-enriched dataset."
+    should_audit: true
+    audit_suggestion: "Consider adding a step that uses HubSpot API to fill missing titles, or use a different BrightData dataset that includes experience data."
+
+  - id: 3
+    date: 2026-04-19
+    run: "second pipeline run"
+    what_happened: "enrich-companies failed again — 0/141, 'company_id NOT NULL constraint violation'"
+    root_cause: |
+      CLI table has `company_id bigint NOT NULL` with no default/auto-increment.
+      The INSERT statement was missing the company_id column entirely.
+      BrightData returns company_id as a string slug (e.g., "cuez-app") — not numeric.
+    fix: |
+      - Added company_id to INSERT columns
+      - Generate numeric ID: use BD numeric company_id if available, otherwise hash company name
+      - Hash: Java-style string hashCode → Math.abs for positive bigint
+    lesson: "Always check table constraints (NOT NULL, defaults, auto-increment) before writing INSERT statements. Never assume primary keys are auto-generated."
+    should_audit: false
+
+  - id: 4
+    date: 2026-04-19
+    run: "discover-urls runs"
+    what_happened: "86/100 found on first run, 57/77 on second — 143/177 total (81% success rate)"
+    root_cause: "Not a bug — some contacts don't have LinkedIn profiles or have names too common for reliable matching."
+    fix: "None needed — 81% is acceptable for automated URL discovery."
+    lesson: "Serper + site:linkedin.com/in/ is effective for ~80% of contacts. Remaining 20% may need manual lookup or alternative discovery methods."
+    should_audit: false
+
+  - id: 5
+    date: 2026-04-19
+    run: "third pipeline run (company enrichment re-run)"
+    what_happened: "96/141 companies inserted successfully after fix (68% success rate)"
+    root_cause: "~45 companies returned dead_page errors from BrightData — LinkedIn company URL constructed from domain slug didn't match actual company page."
+    fix: "None yet — current URL construction guesses slug from domain name. Many mismatches."
+    lesson: "LinkedIn company URL != domain slug. Need a discovery step (like Serper for contacts) to find correct company LinkedIn URLs before enrichment."
+    should_audit: true
+    audit_suggestion: "Add a discover-company-urls.ts step using Serper: site:linkedin.com/company/ 'company name'. Similar pattern to discover-urls.ts for contacts."
+
+  - id: 6
+    date: 2026-04-19
+    run: "pipeline dependency analysis"
+    what_happened: "Realized enrichment skill should validate upstream data quality before processing"
+    root_cause: |
+      The enrichment pipeline processes whatever is in PLI/CLI without checking upstream validation.
+      For Sales Nav flows: salesnav-url-validator sets validation_status on URLs.
+      Only validated URLs should flow into scraping → PLI ingestion → enrichment.
+      Currently no gate between scraping and enrichment.
+    fix: "Not yet implemented"
+    lesson: "Enrichment should respect upstream pipeline gates. When PLI contacts come from Sales Nav scraping, check that the source URL had validation_status = 'validated' before enriching."
+    should_audit: true
+    audit_suggestion: "Add optional --require-validated flag to enrichment scripts that filters PLI records by their upstream source validation status."
+
+# Template for new lessons:
+# - id: N
+#   date: YYYY-MM-DD
+#   run: "description of what was run"
+#   what_happened: "observed behavior"
+#   root_cause: "why it happened"
+#   fix: "what was changed"
+#   lesson: "what to remember for next time"
+#   should_audit: true/false
+#   audit_suggestion: "optional — what to check"

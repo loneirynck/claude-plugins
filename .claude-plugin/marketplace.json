@@ -8,6 +8,11 @@
       "name": "performance-marketer",
       "source": "./performance-marketer",
       "description": "B2B performance marketing plugin for LinkedIn Ads. Includes campaign health diagnostics, 3-level ads reporting, and audience export to LinkedIn Matched Audiences. Powered by Supabase data."
+    },
+    {
+      "name": "meta-skills",
+      "source": "./meta-skills",
+      "description": "Evergreen meta-skills for AI-native operators: structured thinking, skill creation, auditing, and visualization. Agent-agnostic — works with Claude Code, Claude Desktop, and Hermes."
     }
   ]
 }

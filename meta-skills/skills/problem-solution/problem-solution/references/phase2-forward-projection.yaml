@@ -1,0 +1,40 @@
+name: Forward Projection
+wave: 1 (parallel with Phase 1)
+description: Define the desired end state before exploring how to get there.
+
+sections:
+  desired_state:
+    instruction: |
+      Define what "solved" looks like in concrete terms:
+      - What specific outcomes must be true?
+      - What does the user/system experience after the problem is solved?
+      - What metrics or behaviors prove success?
+    output: 3-5 concrete success criteria
+
+  constraints:
+    instruction: |
+      What must be respected regardless of solution:
+      - Budget/time/resource limits
+      - Technical constraints (language, platform, compatibility)
+      - Business constraints (compliance, contracts, stakeholder approval)
+      - Non-negotiables from the user
+    output: Constraint list
+
+  timeline:
+    instruction: |
+      What is the urgency?
+      - Is there a hard deadline?
+      - What is the cost of delay per day/week?
+      - Are there external events driving the timeline?
+    output: Timeline with urgency assessment
+
+output_format: |
+  ## Forward Projection
+
+  **Desired end state:**
+  - [concrete outcome 1]
+  - [concrete outcome 2]
+  - [concrete outcome 3]
+
+  **Constraints:** [list]
+  **Timeline:** [urgency + deadline if any]

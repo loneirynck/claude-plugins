@@ -1,0 +1,36 @@
+name: Einstein-Inspired Problem Reframing
+description: Apply Einstein's principle — "If I had an hour to solve a problem, I'd spend 55 minutes defining the problem." Six techniques to see the problem from every angle.
+
+techniques:
+  rephrase:
+    instruction: State the problem 3 different ways using completely different vocabulary and framing
+    purpose: Forces you past your initial mental model. If all 3 versions say the same thing, you haven't reframed — you've just paraphrased.
+    output: 3 distinct restatements
+
+  challenge_assumptions:
+    instruction: List every assumption embedded in how the problem was originally stated. For each, ask "what if the opposite were true?"
+    purpose: Most stuck problems contain a hidden assumption that constrains the solution space.
+    output: List of assumptions + what changes if each is wrong
+
+  chunk_up:
+    instruction: Ask "what is this a part of?" — what's the bigger system or goal this problem lives inside?
+    purpose: Sometimes you're solving a sub-problem when the real issue is one level up.
+    output: The parent problem / bigger picture
+
+  chunk_down:
+    instruction: Break the problem into its smallest component sub-problems. Which one, if solved, would make the others easier or irrelevant?
+    purpose: Identifies the keystone sub-problem — the one that unlocks the rest.
+    output: List of sub-problems + the keystone
+
+  multiple_perspectives:
+    instruction: How would these people describe the problem? (a) the end user (b) a new team member seeing it fresh (c) someone who thinks the current system is fine
+    purpose: Your perspective is one of many. The person who thinks it's fine might reveal why the system was built this way.
+    output: 3 perspective-specific restatements
+
+  question_format:
+    instruction: Rephrase the problem as an engaging, positive question. Not "why is X broken" but "how might we make X do Y?"
+    purpose: Moves from blame/diagnosis to possibility. Changes the emotional framing.
+    output: One "How might we..." question
+
+synthesis:
+  instruction: After applying all 6 techniques, identify the single most illuminating reframing — the one that changes how you think about the problem. Return this as the Einstein reframing output.

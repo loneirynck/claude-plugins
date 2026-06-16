@@ -1,0 +1,119 @@
+# Data Spine Audit Configuration
+# Each check auto-skips if source_table doesn't exist on the client instance.
+# Thresholds are percentages — below warn = WARNING, below fail = CRITICAL.
+
+checks:
+  - name: crm_contact_resolution
+    description: HubSpot contacts matched to PLI profiles via hubspot_contact_id
+    sql: sql/crm-contacts.sql
+    source_table: hubspot.contacts
+    thresholds: { warn: 50, fail: 20 }
+    recommendation: "Run enrich-hubspot-contacts.ts to discover LinkedIn URLs and enrich CRM contacts into PLI"
+
+  - name: crm_company_resolution
+    description: HubSpot companies matched to CLI records
+    sql: sql/crm-companies.sql
+    source_table: hubspot.companies
+    thresholds: { warn: 40, fail: 15 }
+    recommendation: "Run enrich-companies.ts to enrich CLI with company data"
+
+  - name: meeting_resolution
+    description: Meeting participants resolved to person + company via engagement spine
+    sql: sql/meeting-resolution.sql
+    source_table: krisp.raw_transcripts
+    alt_source_table: fathom.raw_meetings
+    thresholds: { warn: 60, fail: 30 }
+    recommendation: "Check int_entity_resolution_engagement model and meeting participant email coverage"
+
+  - name: competitor_follower_resolution
+    description: Competitor followers resolved to PLI profiles
+    sql: sql/competitor-followers.sql
+    source_table: public.competitor_followers
+    thresholds: { warn: 40, fail: 15 }
+    recommendation: "Run enrich-contacts.ts to enrich competitor follower profiles in PLI"
+
+  - name: network_map_resolution
+    description: Network map connections resolved to PLI profiles
+    sql: sql/network-map.sql
+    source_table: public.network_map
+    thresholds: { warn: 60, fail: 30 }
+    recommendation: "Run enrich-contacts.ts to enrich network map profiles in PLI"
+
+  - name: linkedin_ads_resolution
+    description: Competitor + client ad scrape coverage (scraped targets vs registered in config)
+    sql: sql/linkedin-ads.sql
+    source_table: linkedin_ads_scraper.config
+    alt_source_table: public.linkedin_ad_creatives
+    thresholds: { warn: 60, fail: 30 }
+    recommendation: "Run enrich-ads.ts to scrape unscraped targets. Targets with 0 ads after scraping are acceptable (no active campaigns)."
+
+  - name: outreach_resolution
+    description: HeyReach/outreach leads resolved to PLI profiles
+    sql: sql/outreach-resolution.sql
+    source_table: heyreach.campaign_leads
+    alt_source_table: outreach.leads
+    thresholds: { warn: 50, fail: 20 }
+    recommendation: "Run discover-urls.ts + enrich-contacts.ts for outreach leads missing LinkedIn URLs"
+
+  - name: persona_coverage
+    description: PLI records with buyer_persona_type classified
+    sql: sql/persona-coverage.sql
+    source_table: public.pli
+    thresholds: { warn: 80, fail: 50 }
+    recommendation: "Run classify-contacts.ts to classify unclassified PLI records"
+
+  - name: field_completeness
+    description: PLI field fill rates across key identity fields
+    sql: sql/field-completeness.sql
+    source_table: public.pli
+    thresholds: { warn: 70, fail: 30 }
+    recommendation: "Run enrich-contacts.ts for missing profile data, enrich-hubspot-contacts.ts for missing emails"
+
+  - name: competitor_employee_posts
+    description: Competitor employees (in PLI) with LinkedIn posts discovered
+    sql: sql/competitor-employee-posts.sql
+    source_table: public.linkedin_posts
+    thresholds: { warn: 10, fail: 2 }
+    recommendation: "Run discover_competitor_posts.ts --step=employees to scrape employee posts via BrightData discover_by=profile_url"
+
+  - name: competitor_company_posts
+    description: Competitor company pages with LinkedIn posts discovered
+    sql: sql/competitor-company-posts.sql
+    source_table: public.linkedin_posts
+    thresholds: { warn: 30, fail: 10 }
+    recommendation: "Run discover_competitor_posts.ts --step=companies to scrape company page posts via BrightData discover_by=company_url"
+
+  - name: pli_company_enrichment
+    description: PLI company_id coverage in CLI (how many PLI companies have enriched company data)
+    sql: sql/pli-company-enrichment.sql
+    source_table: public.pli
+    thresholds: { warn: 70, fail: 40 }
+    recommendation: "Run discover-company-urls.ts + enrich-companies.ts to enrich missing CLI records for PLI companies"
+
+  - name: deal_enrichment_gaps
+    description: Deal companies matched to CLI/PLI records (deal → company → CLI → PLI chain)
+    sql: sql/deal-enrichment-gaps.sql
+    source_table: hubspot.deals
+    thresholds: { warn: 50, fail: 20 }
+    recommendation: "Discover LinkedIn URLs for unmatched deal companies, then run enrich-companies.ts + scrape employees into PLI"
+
+  - name: deal_persona_coverage
+    description: ICP persona match rate for profiles at deal companies
+    sql: sql/deal-persona-coverage.sql
+    source_table: hubspot.deals
+    thresholds: { warn: 40, fail: 15 }
+    recommendation: "Run classify-contacts.ts for unclassified PLI at deal companies. If coverage is low, review persona definitions via /icp-development"
+
+  - name: crm_contact_staleness
+    description: CRM contacts where current LinkedIn employer domain differs from CRM company domain (job changers detected via CLI domain comparison)
+    sql: sql/crm-contact-staleness.sql
+    source_table: hubspot.contacts
+    thresholds: { warn: 70, fail: 40 }
+    recommendation: "Re-enrich stale contacts via BrightData to refresh PLI profiles. Prerequisite: ensure PLI companies are enriched in CLI (pli_company_enrichment check) and CRM companies are in CLI (crm_company_resolution check)"
+
+  - name: deployment_integrity
+    description: Edge function → Postgres callback pairing (hands + brain check)
+    sql: sql/deployment-integrity.sql
+    source_table: public.pli
+    thresholds: { warn: 90, fail: 70 }
+    recommendation: "Apply missing migrations for engines without callbacks. Each engine needs handle_* functions in Postgres."

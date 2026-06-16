@@ -1,0 +1,52 @@
+name: Dependency Mapping
+wave: 2 (sequential — depends on Wave 1)
+description: Map everything that blocks the solution and everything the solution blocks.
+
+sections:
+  upstream:
+    instruction: |
+      What feeds INTO solving this problem?
+      - Systems, APIs, data sources involved
+      - Preconditions that must be true
+      - Decisions that must be made first
+      - Resources required (people, budget, access)
+    output: List of upstream dependencies with status (satisfied/blocker/unknown)
+
+  downstream:
+    instruction: |
+      What depends on this problem being solved?
+      - What is currently blocked?
+      - What breaks if it stays unsolved?
+      - What becomes possible once solved?
+      - Who is waiting on this?
+    output: List of downstream dependents
+
+  blockers:
+    instruction: |
+      From the upstream list, identify hard blockers:
+      - What MUST be resolved before any solution can work?
+      - Are there circular dependencies?
+      - Which blocker, if removed, unblocks the most?
+    output: Prioritized blocker list
+
+  critical_path:
+    instruction: |
+      What is the minimum dependency chain from current state to solved?
+      - Remove all optional dependencies
+      - What is the shortest path through required dependencies?
+    output: Linear critical path
+
+output_format: |
+  ## Dependency Map
+
+  ```
+  Desired State
+    requires: [dep A] — status: satisfied
+    requires: [dep B] — status: BLOCKER
+      requires: [dep C] — status: unknown
+    requires: [dep D] — status: satisfied
+  ```
+
+  **Blockers:** [prioritized list]
+  **Critical path:** [shortest path]
+  **Downstream impact:** [what's waiting on this]

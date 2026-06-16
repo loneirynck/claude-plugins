@@ -1,0 +1,82 @@
+name: UML Sequence Diagram — Skill Documentation Convention
+description: Rules for creating UML sequence diagrams that document how a skill's script or workflow operates.
+
+when_to_apply: |
+  Apply when creating a UML sequence diagram to document a skill's internal process flow.
+  Every non-trivial skill (Tier 2+) should have a sequence diagram showing how its
+  script orchestrates reads, writes, and transformations.
+
+output_rules:
+  svg:
+    location: .claude/skills/visualize/output/{skill-name}-sequence.svg
+    purpose: Editable source — stays in output/ for future iteration. NEVER copy SVG elsewhere.
+  png:
+    location: .claude/skills/visualize/output/{skill-name}-sequence.png
+    purpose: High-res export (3x scale default)
+  skill_copy:
+    location: .claude/skills/{skill-name}/{skill-name}-sequence.png
+    format: PNG only
+    purpose: Visual reference alongside SKILL.md — self-documenting
+    auto_copy: true
+
+naming:
+  pattern: "{skill-name}-sequence"
+  examples:
+    - client-workspace-sequence
+    - enrichment-sequence
+    - phantombuster-agent-sequence
+
+participants:
+  description: |
+    Map the skill's components to UML participants. Common patterns:
+  typical_roles:
+    - role: User / Trigger
+      description: Who or what initiates the skill (CLI user, cron, webhook)
+      color: { stroke: "#f0f0f0", fill: "#12122a", text: "#f0f0f0" }
+    - role: Script / Logic
+      description: The main script that orchestrates (e.g., sync-workspace.ts)
+      color: { stroke: "#e94560", fill: "#2a1a3a", text: "#c0a0b0" }
+    - role: Config / Input
+      description: Configuration files read by the script (YAML, JSON, profiles.yml)
+      color: { stroke: "#1a5a9e", fill: "#0f3460", text: "#a0c0e0" }
+    - role: Source Data
+      description: Data sources the script reads (database, API, file system)
+      color: { stroke: "#4caf50", fill: "#1a2a1a", text: "#8cbf8c" }
+    - role: Output / Write
+      description: Files or systems the script writes to
+      color: { stroke: "#ff9800", fill: "#1a3a1a", text: "#c0b080" }
+    - role: Optional / Secondary
+      description: Conditional operations (ZIP export, notifications)
+      color: { stroke: "#9c27b0", fill: "#2a1a2a", text: "#b080c0" }
+
+structure:
+  phases: |
+    Group messages into labeled phases that match the skill's logical steps.
+    Example: INITIALIZATION → FILTER → SYNC LOOP → OUTPUT GENERATION
+  loops: |
+    Use dashed-border "loop" frames for repeated operations (per-client, per-skill).
+    Label with the iteration variable: [for each active client], [for each skill].
+  optional_blocks: |
+    Use "opt" frames for conditional operations gated by flags (--zip, --dry-run).
+  notes: |
+    Add note boxes near lifelines for important edge cases or business rules.
+
+design_rules:
+  dark_theme: true
+  background: "#0f0f1a"
+  font_family: "system-ui, -apple-system, sans-serif"
+  title_font_size: 14
+  subtitle_font_size: 9
+  message_label_font_size: 6.5
+  participant_name_font_size: 7.5
+  participant_role_font_size: 6
+  participant_box_height: 36
+  lifeline_dasharray: "3,3"
+  viewbox: "adjust to content — typically 1050x820"
+
+legend:
+  required: true
+  include:
+    - solid_arrow: "Request / action"
+    - dashed_arrow: "Response / conditional"
+    - color_key: "One swatch per participant role"

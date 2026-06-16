@@ -1,0 +1,51 @@
+name: Solution Roadmap
+wave: 5 (after user picks option from /compare-options)
+description: Produce the execution plan based on the selected option and the reverse-engineered action chain.
+
+process:
+  instruction: |
+    After the user confirms their chosen option from /compare-options:
+
+    1. Take the forward execution order from Phase 4 (reverse engineering)
+    2. Apply it to the selected option
+    3. For each step, specify what it achieves and which dependency it satisfies
+    4. Group parallel-eligible steps into waves
+    5. Add risk mitigation for each identified blocker
+    6. Define measurable success criteria
+    7. Define how to verify the solution works
+
+output_format: |
+  ## Solution Roadmap
+
+  **Selected approach:** [Option name from /compare-options]
+  **Confirmed problem:** [One-sentence from /problem-statement]
+
+  ### Execution Plan
+
+  **Wave 1** (parallel):
+  - [ ] [Step] — achieves [outcome] — satisfies [dep]
+  - [ ] [Step] — achieves [outcome] — satisfies [dep]
+
+  **Wave 2** (depends on Wave 1):
+  - [ ] [Step] — achieves [outcome] — satisfies [dep]
+
+  **Wave 3** (depends on Wave 2):
+  - [ ] [Step] — achieves [outcome] — satisfies [dep]
+
+  ### Risk Mitigation
+
+  | Risk | Likelihood | Impact | Mitigation |
+  |------|-----------|--------|------------|
+  | [risk] | high/med/low | [what breaks] | [strategy] |
+
+  ### Success Criteria
+
+  - [Measurable outcome 1]
+  - [Measurable outcome 2]
+  - [Measurable outcome 3]
+
+  ### Verification Plan
+
+  - [How to prove it works — tests, commands, checks]
+  - [What to look for to confirm success]
+  - [Rollback plan if verification fails]

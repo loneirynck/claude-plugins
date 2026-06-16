@@ -1,0 +1,127 @@
+name: Intent Interview Methodology
+description: Structured questioning to extract what the user actually wants — not what they think they should want.
+
+principles:
+  core: |
+    Users often present solutions instead of problems, scope instead of goals,
+    or symptoms instead of root needs. Your job is to dig past the surface
+    request to the actual outcome they need.
+
+  confidence_tracking: |
+    Start at 0%. Each Q&A pair has a confidence_delta — how much certainty
+    it added. Target: 95%. If you're at 80% after 3 questions, push harder
+    on the remaining ambiguity instead of asking more surface questions.
+
+  when_to_stop: |
+    Stop when you can predict what the user would say if asked any follow-up.
+    If you'd be surprised by their answer to ANY reasonable question, you're
+    not at 95%.
+
+questioning_layers:
+
+  layer_1_surface:
+    name: "What are you asking for?"
+    purpose: Understand the literal request
+    questions:
+      - "What do you want to build/fix/change?"
+      - "What does 'done' look like?"
+      - "Is there a deadline or trigger for this work?"
+    confidence_gain: "Usually gets you to 30-50%"
+
+  layer_2_motivation:
+    name: "Why do you want this?"
+    purpose: Uncover the real need behind the ask
+    questions:
+      - "What problem does this solve for you?"
+      - "What happens if we don't do this?"
+      - "Who else cares about this and why?"
+      - "What changed that makes this urgent now?"
+    confidence_gain: "Gets you to 60-75%"
+    note: |
+      This is where users often reveal the ACTUAL need is different from
+      what they asked for. A request to "add a config option" might really
+      be "I need to test different behaviors without redeploying."
+
+  layer_3_constraints:
+    name: "What can't we touch?"
+    purpose: Identify boundaries that shape the solution space
+    questions:
+      - "What existing behavior must NOT change?"
+      - "Are there dependencies that constrain the approach?"
+      - "What's the budget — time, complexity, risk appetite?"
+      - "Is this a one-off or will it need to scale?"
+    confidence_gain: "Gets you to 80-85%"
+
+  layer_4_challenge:
+    name: "Push back on assumptions"
+    purpose: Test whether the user's framing is the right framing
+    techniques:
+      - name: "Flip the ask"
+        instruction: "What if we did the opposite of what you're asking?"
+        example: "You want to add a column — what if we removed the table entirely and computed this on the fly?"
+      - name: "10x test"
+        instruction: "If this had to handle 10x the scale/complexity, would you still approach it this way?"
+      - name: "Delete test"
+        instruction: "What if we just deleted this? What breaks?"
+      - name: "New person test"
+        instruction: "If someone joined tomorrow and saw this, would they understand why it exists?"
+      - name: "Adjacent problem"
+        instruction: "Is there a nearby problem that, if solved, would make this one irrelevant?"
+    confidence_gain: "Gets you to 90-95%"
+    note: |
+      This is the CRITICAL layer most interviews skip. Don't be afraid to
+      say "I think you're solving the wrong problem" or "This sounds like
+      a symptom of X — should we address X instead?"
+
+  layer_5_restate:
+    name: "Mirror back with precision"
+    purpose: Final alignment check — restate in YOUR words, not theirs
+    format: |
+      Here's what I think you actually want:
+
+      **Goal:** [the real outcome, not the solution they proposed]
+      **Approach:** [how we'll get there]
+      **Scope:** [what's in]
+      **Out of scope:** [what we're explicitly NOT doing]
+      **Success looks like:** [concrete, verifiable end state]
+
+      Does this match? What did I get wrong?
+
+anti_patterns:
+  - name: "Yes-ladder"
+    description: "Asking questions the user can only say yes to. Forces depth instead."
+    fix: "Ask open-ended questions that require explanation, not confirmation."
+
+  - name: "Scope creep acceptance"
+    description: "User keeps adding 'oh and also...' without pushback."
+    fix: "After 3+ additions, pause: 'We're growing scope. What's the CORE deliverable vs nice-to-have?'"
+
+  - name: "Solution anchoring"
+    description: "User says 'build X using Y' and you accept both X and Y without questioning."
+    fix: "Separate the WHAT from the HOW. 'Why Y specifically? Would Z also work?'"
+
+  - name: "Premature agreement"
+    description: "Restating at 60% confidence because the user seems impatient."
+    fix: "Better to ask 2 more sharp questions than deliver the wrong thing."
+
+  - name: "Asking about things you could look up"
+    description: "Asking which files to modify when you could just search the codebase."
+    fix: "Only interview about intent, constraints, and preferences — not facts you can verify yourself."
+
+  - name: "Assuming client tooling"
+    description: "Assuming a client uses the same tools as other clients (e.g., Fathom for meetings, HubSpot for CRM) without verifying against their actual Supabase instance."
+    fix: "Check the client's actual module list in client-index.yml AND verify the tools are operational in Supabase (tables exist, data flows). A module listed in client-index doesn't mean it's deployed or active. Query the actual tables before building on assumptions."
+
+out_of_scope_probing:
+  instruction: |
+    BEFORE restating intent, proactively suggest what should be OUT of scope.
+    Users often don't think about boundaries until you name them.
+
+    Pattern: "I think these should be out of scope — tell me if any belong IN:
+    - [thing that's adjacent but not core]
+    - [thing that sounds related but is a different initiative]
+    - [thing that would 3x the effort for marginal gain]"
+
+  why: |
+    Explicit out-of-scope prevents scope creep during execution.
+    It's easier to add something back in than to remove it mid-flight.

@@ -1,0 +1,25 @@
+{
+  "name": "enrichment",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "discover:urls": "tsx scripts/discover-urls.ts",
+    "enrich:contacts": "tsx scripts/enrich-contacts.ts",
+    "discover:company-urls": "tsx scripts/discover-company-urls.ts",
+    "enrich:companies": "tsx scripts/enrich-companies.ts",
+    "classify:contacts": "tsx scripts/classify-contacts.ts",
+    "enrich:posts": "tsx scripts/enrich-posts.ts",
+    "enrich:ads": "tsx scripts/enrich-ads.ts",
+    "enrich:all": "tsx scripts/enrich-all.ts"
+  },
+  "dependencies": {
+    "openai": "^6.33.0",
+    "pg": "^8.13.0",
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

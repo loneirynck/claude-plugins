@@ -1,0 +1,114 @@
+# GTM Engine Dashboard — YAML Template
+# Blank template. Copy to client_projects/{client}/.nodewin/gtm-engine.yaml and fill in.
+# Used by /visualize:gtm-engine to render a marketing funnel dashboard with Supabase spine.
+
+# ── Header ──────────────────────────────────────────────
+header:
+  client: null              # e.g., "Wintercircus Academy"
+  program_name: null        # e.g., "Engineering Leadership Program"
+  ticket_price: null        # e.g., "~€14k/cohort"
+  persona_count: null       # e.g., "6-7 defined personas"
+  date: null                # e.g., "2026-05-18" (auto-filled at render time)
+
+# ── Funnel Layers ───────────────────────────────────────
+# Each layer represents a stage of the marketing funnel.
+# Blocks are rendered left-to-right within each layer.
+funnel_layers:
+  - name: "Demand Creation"
+    label_color: "#e94560"
+    blocks:
+      - name: null          # e.g., "LinkedIn Awareness Campaigns"
+        description: null   # e.g., "Personal profile content | €300/mo min"
+        details: []         # Array of detail lines (small text)
+        style: solid        # solid | dashed (dashed = dormant/deferred)
+        color_scheme: null  # e.g., "cyan" | "green" | "orange" | "purple" | "red" | "muted"
+
+  - name: "Demand Capture"
+    label_color: "#ff9800"
+    blocks: []
+
+  - name: "Content Engine"
+    label_color: "#9c27b0"
+    blocks: []
+    # Content engine blocks are rendered as a horizontal flow with arrows between them
+
+  - name: "Activation"
+    label_color: "#1a5a9e"
+    blocks: []
+
+  - name: "Conversion"
+    label_color: "#4caf50"
+    blocks: []
+
+# ── Supabase Spine ──────────────────────────────────────
+# Right-side column showing what Supabase does at each funnel stage.
+# Array must align with funnel_layers (same order).
+supabase_spine:
+  - layer: "Demand Creation"
+    title: null             # e.g., "Ad Campaign Tracking"
+    bullets: []             # Array of description lines
+    note: null              # Optional small note at bottom
+
+  - layer: "Demand Capture"
+    title: null
+    bullets: []
+    note: null
+
+  - layer: "Content Engine"
+    title: null
+    bullets: []
+    note: null
+
+  - layer: "Activation"
+    title: null
+    bullets: []
+    note: null
+
+  - layer: "Conversion"
+    title: null
+    bullets: []
+    note: null
+
+# Bottom of Supabase spine — always rendered
+supabase_footer:
+  text: null                # e.g., "MCP Server → Team Access (Claude, Nele, Daniel, Bruno)"
+
+# ── Tools & Costs ───────────────────────────────────────
+tools:
+  - name: null              # e.g., "Supabase"
+    description: null       # e.g., "Central DB + MCP"
+    cost: null              # e.g., "FREE" | "€300/mo min" | "From €50/mo" | "TBD"
+    status: null            # free | existing | active | deferred
+    color_scheme: null      # cyan | green | orange | purple | red | blue | muted
+
+# ── Estimated Total Cost ────────────────────────────────
+cost_estimate:
+  range: null               # e.g., "€350-560"
+  note: null                # e.g., "+€109/seat when Lemlist activates"
+
+# ── Team ────────────────────────────────────────────────
+team:
+  - name: null              # e.g., "Bruno"
+    role: null              # e.g., "GTM lead · ICP raster · closing"
+    color_scheme: null      # green | cyan | purple | muted
+
+# ── Execution Timeline ──────────────────────────────────
+timeline:
+  - title: null             # e.g., "WEEK 1 — Quick Wins"
+    color_scheme: null      # green | blue | purple
+    sections:
+      - label: null         # e.g., "Bruno:"
+        items: []           # Array of action items
+    supabase_note: null     # e.g., "Supabase: Provision instance + deploy foundation"
+
+# ── Key Decisions ───────────────────────────────────────
+key_decisions: []           # Array of numbered decision strings
+
+# ── Feedback Loops ──────────────────────────────────────
+# Arrows that loop back between blocks (e.g., content → awareness, discovery → CRISP)
+feedback_loops:
+  - from: null              # Block name or section
+    to: null                # Block name or section
+    label: null             # e.g., "content feeds awareness campaigns"
+    style: dashed           # solid | dashed
+    color: null             # e.g., "#4caf50"

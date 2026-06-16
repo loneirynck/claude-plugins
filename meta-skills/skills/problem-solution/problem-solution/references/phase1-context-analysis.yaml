@@ -1,0 +1,44 @@
+name: Context Analysis
+wave: 1 (parallel with Phase 2)
+description: Ground the assessment in facts before exploring solutions.
+
+sections:
+  background_and_evidence:
+    instruction: |
+      Gather contextual evidence with quantifiable data where possible:
+      - How does the system/process currently work?
+      - What is the current reality vs. how it should work?
+      - What data points demonstrate the scope of the problem?
+      - What is the timeline/urgency?
+    output: Bullet list of factual observations with data
+
+  relevance_and_impact:
+    instruction: |
+      Assess why solving this matters:
+      - What are the consequences of inaction?
+      - Who/what is affected? (stakeholders, systems, revenue, users)
+      - What is the organizational or business impact?
+      - Is this getting worse over time?
+    output: Impact assessment with severity rating (critical/high/medium/low)
+
+  assumptions_check:
+    instruction: |
+      List every assumption being made:
+      - Which assumptions are validated (proven true)?
+      - Which are guessed (assumed but unverified)?
+      - What happens if each key assumption is wrong?
+      - Which assumptions, if wrong, would change the solution entirely?
+    output: Assumption table with validation status
+
+output_format: |
+  ## Context Analysis
+
+  **Background:**
+  - [factual observations with data]
+
+  **Impact:** [severity] — [why this matters]
+
+  **Assumptions:**
+  | Assumption | Status | Risk if Wrong |
+  |-----------|--------|---------------|
+  | ... | validated/guessed | ... |

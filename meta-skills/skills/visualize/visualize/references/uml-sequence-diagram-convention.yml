@@ -1,0 +1,109 @@
+name: UML Sequence Diagram Convention
+description: Rules for creating, exporting, and storing UML sequence diagrams related to Supabase edge functions and pipelines.
+
+when_to_apply: |
+  Apply this convention when creating UML sequence diagrams or architecture diagrams
+  that document a Supabase edge function, pipeline, or event chain.
+
+output_rules:
+  svg:
+    location: .claude/skills/visualize/output/{name}.svg
+    purpose: Editable source — stays in output/ for future iteration
+
+  png:
+    location: .claude/skills/visualize/output/{name}.png
+    purpose: High-res export for sharing
+
+  edge_function_copy:
+    location: kits/supabase/functions/{engine-name}/architecture-{diagram-name}.png
+    format: PNG only (not SVG)
+    naming: architecture-{descriptive-name}.png (kebab-case, prefixed with architecture-)
+    purpose: Self-documenting reference for less technical team members
+    auto_copy: true  # always copy after PNG export when diagram is edge-function related
+
+versioning:
+  description: |
+    When updating an existing architecture diagram, preserve the previous version
+    with a date suffix before overwriting.
+  steps:
+    - Check if kits/supabase/functions/{engine-name}/architecture-{name}.png exists
+    - If yes, rename existing to architecture-{name}-{YYYYMMDD}.png (date of the OLD version)
+    - Write new version as architecture-{name}.png (always the latest)
+  example:
+    before: architecture-freshdata-pipeline.png
+    after_rename: architecture-freshdata-pipeline-20260523.png
+    new_file: architecture-freshdata-pipeline.png
+
+design_rules:
+  swim_lanes:
+    description: Use 3+ horizontal swim lanes for Supabase pipelines
+    lanes:
+      - id: brain
+        label: "BRAIN (Postgres)"
+        includes: pg_cron, table functions (dispatch, callbacks, chain handlers), config tables
+        color: { stroke: "#1a5a9e", fill: "#0f3460", text: "#a0c0e0" }
+      - id: hands
+        label: "HANDS (Edge Function)"
+        includes: edge function routes, API calls, callback firing
+        color: { stroke: "#e94560", fill: "#2a1a3a", text: "#c0a0b0" }
+      - id: external
+        label: "EXTERNAL API"
+        includes: third-party APIs (FreshData, BrightData, Triggify, etc.)
+        color: { stroke: "#ff9800", fill: "#1a3a1a", text: "#c0b080" }
+      - id: entity_tables
+        label: "ENTITY TABLES"
+        includes: public.pli, public.cli, public.linkedin_posts, public.post_engagements, etc.
+        color: { stroke: "#4caf50", fill: "#1a2a1a", text: "#8cbf8c" }
+
+  required_sections:
+    - stages: |
+        Show each pipeline stage with event chaining arrows.
+        Each stage box should show: stage name, what triggers it, what it produces.
+    - routing_logic: |
+        Show decision points — which path the pipeline takes based on conditions.
+        Examples: "if no employees → skip to stage 3", "if engagement unchanged → skip post".
+    - fallback_logic: |
+        Show what happens on failure — retry, skip, fallback to alternate API, mark terminal.
+        Show the error path alongside the happy path.
+    - loop_patterns: |
+        Show fan-out loops (per employee, per post, per engager) with:
+        - Loop count source (e.g., "PLI employees at competitor company")
+        - Rate limiting mechanism (pg_sleep interval)
+        - Convergence pattern (counter-based: last callback chains next stage)
+    - rate_limiting: |
+        Document per-API rate limits and how they're enforced.
+        Show pg_sleep(N) intervals between dispatches.
+        Include worst-case analysis: items_per_tick × calls_per_item ≤ rate_limit.
+    - tables_used: |
+        List ALL database tables involved in the pipeline:
+        - Config tables (e.g., freshdata.config — per-competitor schedule)
+        - Progress tables (e.g., freshdata.stage_progress — convergence tracking)
+        - Entity tables read from (e.g., public.competitors, public.pli)
+        - Entity tables written to (e.g., public.linkedin_posts, public.post_engagements, public.pli)
+        - Observability tables (e.g., core.pipeline_runs, core.api_calls)
+    - smart_filters: |
+        Document incremental/delta/cutoff logic:
+        - Engagement delta: num_likes > stored_reactions (only fetch when new engagement)
+        - Post age cutoff: posts > 3 weeks AND already collected → skip
+        - New engagers only: NOT EXISTS in PLI → enrich
+        - Incremental: last_scraped_at per competitor → skip if recent
+    - upstream_dependencies: What feeds into the pipeline (competitors, PLI, vault secrets)
+    - downstream_dependents: What consumes the pipeline output (dbt models, skills, campaigns)
+    - configuration: Cron schedule (disabled by default), rate limits, cost estimate per client
+    - legend: Arrow types, color coding, component types
+
+  arrow_conventions:
+    pg_net_dispatch: { style: solid, color: "#7eb8da", label: "pg_net dispatch (fire-and-forget)" }
+    callback_rpc: { style: dashed, color: "#4caf50", label: "callback RPC (core.handle_*)" }
+    event_chain: { style: solid, color: "#9c27b0", weight: 1.5, label: "EVENT CHAIN (freshdata.*_done → dispatch next)" }
+    external_api: { style: solid, color: "#ff9800", label: "external API call" }
+    table_write: { style: dashed, color: "#4caf50", opacity: 0.6, label: "upsert to entity table" }
+    decision: { style: dotted, color: "#556", label: "conditional path (if/else)" }
+    error_path: { style: dashed, color: "#e94560", label: "error/failure path" }
+
+  reference_pattern: references/postgres-first-event-driven-pipeline.yml
+
+skill_md_reference: |
+  Add a one-line reference in SKILL.md under the "Reference Patterns" section:
+  "When diagramming edge function pipelines, also read references/uml-sequence-diagram-convention.yml
+  for output rules, versioning, swim lanes, and required sections."

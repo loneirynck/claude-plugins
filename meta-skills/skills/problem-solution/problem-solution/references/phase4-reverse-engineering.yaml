@@ -1,0 +1,38 @@
+name: Reverse Engineering
+wave: 3 (sequential — depends on Wave 2)
+description: Work backwards from the goal through the dependency chain to the current state. Produces the natural execution order.
+
+process:
+  instruction: |
+    Starting from the desired end state (Phase 2) and using the dependency map (Phase 3):
+
+    1. What is the LAST thing that needs to happen before we're at desired state?
+    2. What must be true BEFORE that can happen?
+    3. And before that?
+    4. Continue until you reach the current state.
+
+    This reverse chain naturally produces the execution order (reversed = forward plan).
+
+  rules:
+    - Each step must reference a dependency from Phase 3
+    - If a step has no dependency, it can be parallelized with adjacent steps
+    - Mark each step as: blocker-dependent, parallel-eligible, or sequential-only
+    - The reverse chain should be complete — no gaps between current and desired state
+
+output_format: |
+  ## Reverse Engineering
+
+  **Working backwards from:** [desired state]
+
+  | Step | What must be true | Depends on | Type |
+  |------|-------------------|------------|------|
+  | N (last) | [desired state achieved] | Step N-1 | sequential |
+  | N-1 | [prerequisite] | Step N-2 | sequential |
+  | ... | ... | ... | parallel-eligible |
+  | 1 (first) | [starting from current state] | — | start |
+
+  **Forward execution order** (reverse of above):
+  1. [Step 1]
+  2. [Step 2] (can run parallel with Step 3)
+  3. [Step 3]
+  ...
