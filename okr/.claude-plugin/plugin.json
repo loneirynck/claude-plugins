@@ -1,0 +1,13 @@
+{
+  "name": "okr",
+  "version": "1.0.0",
+  "description": "OKR plugin for AI-native operators: generate structured OKRs through interview, review quality and gaps, and track progress against live Supabase data.",
+  "author": {
+    "name": "Lorenzo Neirynck"
+  },
+  "skills": [
+    "./skills/okr-generator/SKILL.md",
+    "./skills/okr-reviewer/SKILL.md",
+    "./skills/okr-tracker/SKILL.md"
+  ]
+}
